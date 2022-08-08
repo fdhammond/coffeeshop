@@ -11,6 +11,8 @@ const ShopProvider = ({ children }) => {
   const [product, setProduct] = useState({});
   const [modal, setModal] = useState(false);
   const [order, setOrder] = useState([]);
+  const [name, setName] = useState("");
+  const [total, setTotal] = useState(0);
 
   const router = useRouter();
 
@@ -30,6 +32,14 @@ const ShopProvider = ({ children }) => {
   useEffect(() => {
     setCategorySelected(categories[0]);
   }, [categories]);
+
+  useEffect(() => {
+    const newTotal = order.reduce(
+      (total, product) => product.price * product.quantity + total,
+      0
+    );
+    setTotal(newTotal);
+  }, [order]);
 
   const handleClickCategory = (id) => {
     const category = categories.filter((cat) => cat.id === id);
@@ -80,6 +90,31 @@ const ShopProvider = ({ children }) => {
     setOrder(orderUpdated);
   };
 
+  const addOrder = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post("/api/orders", {
+        order,
+        name,
+        total,
+        date: Date.now().toString(),
+      });
+
+      setCategorySelected(categories[0]);
+      setOrder([]);
+      setName("");
+      setTotal(0);
+
+      toast.success("Order has been sent");
+
+      setTimeout(() => {
+        router.push("/");
+      }, 3000);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <ShopContext.Provider
       value={{
@@ -94,6 +129,10 @@ const ShopProvider = ({ children }) => {
         order,
         handleEditQuantityOrder,
         handleDeleteProduct,
+        name,
+        setName,
+        addOrder,
+        total,
       }}>
       {children}
     </ShopContext.Provider>
